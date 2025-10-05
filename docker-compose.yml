@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: app_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "33060:3306"   # 🔍 accesso diretto al DB (solo se serve)
+    networks:
+      - internal_net
+    # NB: solo per debugging, meglio chiudere questa porta in produzione
+
+  redis:
+    image: redis:7.2
+    container_name: app_redis
+    restart: always
+    networks:
+      - internal_net
+    ports:
+      - "6379:6379"  # opzionale, puoi toglierlo se vuoi tenerlo solo interno
+
+  backend:
+    build: ./backend
+    container_name: app_backend
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: appuser
+      DB_PASS: apppass
+      DB_NAME: appdb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3000
+    networks:
+      - internal_net
+      - proxyManager
+
+  frontend:
+    build: ./frontend
+    container_name: app_frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - proxyManager
+    # Angular servito da Nginx
+
+  idp:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: app_idp
+    restart: always
+    command:
+      - start-dev
+    environment:
+      KC_DB: dev-mem
+      KC_HTTP_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_URL: https://idp.tuodominio.dev
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    networks:
+      - proxyManager
+    # puoi collegarlo a MySQL in seguito se vuoi persistenza
+
+volumes:
+  mysql_data:
+
+networks:
+  internal_net:
+    internal: true
+  proxyManager:
+    external: true
