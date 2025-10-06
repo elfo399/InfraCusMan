@@ -17,16 +17,7 @@ services:
     networks:
       - internal_net
     # NB: solo per debugging, meglio chiudere questa porta in produzione
-
-  redis:
-    image: redis:7.2
-    container_name: app_redis
-    restart: always
-    networks:
-      - internal_net
-    ports:
-      - "6379:6379"  # opzionale, puoi toglierlo se vuoi tenerlo solo interno
-
+    
   backend:
     build: ./backend
     container_name: app_backend
