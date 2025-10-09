@@ -13,7 +13,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - "33060:3306"   # ⚠️ solo per debug, chiudi in produzione
+      - "3307:3306"   # ⚠️ solo per debug, chiudi in produzione
     networks:
       - internal_net
     healthcheck:
